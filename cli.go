@@ -1,14 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"errors"
+	"fmt"
+	"time"
 	"github.com/joalberto902/gator/internal/config"
+	"github.com/joalberto902/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 //state struct stores the state of the application to be used by the handlers
 type state struct {
 	Config *config.Config
+	Database *database.Queries
 }
 
 //command holds a name for a command and the arguments for the command
@@ -26,12 +31,43 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) == 0 {
 		return errors.New("login command expects a single argument <username>")
 	} 
+	
+	usr, err := s.Database.GetUser(context.Background(), cmd.Args[0])
+	if err != nil {
+		return err
+	}
 
-	if err := s.Config.SetUser(cmd.Args[0]); err != nil {
+	if err := s.Config.SetUser(usr.Name); err != nil {
 		return err
 	}
 
 	fmt.Printf("New user <%s> has been set", cmd.Args[0])
+	return nil
+}
+
+//handlerRegister registers a new user at the database and fails if user already exists
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.Args) == 0 {
+		return errors.New("register command expects a single argument <username>")
+	}
+	usr, err := s.Database.CreateUser(context.Background(), database.CreateUserParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name: cmd.Args[0],
+	})	
+	if err != nil {
+		return err
+	}
+
+	if err = s.Config.SetUser(usr.Name); err != nil {
+		return err
+	}
+	fmt.Printf("User <%s> was registered sucessfully\nData: ID = %s\nCreatedAt = %v\nUpdatedAt = %v\n", 
+		usr.Name, 
+		usr.ID,
+		usr.CreatedAt,
+		usr.UpdatedAt)
 	return nil
 }
 

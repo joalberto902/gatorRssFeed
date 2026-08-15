@@ -1,9 +1,13 @@
 package main
 
+
+import _ "github.com/lib/pq"
 import (
 	"os"
 	"fmt"
+	"database/sql"
 	"github.com/joalberto902/gator/internal/config"
+	"github.com/joalberto902/gator/internal/database"
 )
 
 func main() {
@@ -12,10 +16,17 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	s := state{Config: &cfg}
+	db, err := sql.Open("postgres", cfg.DbURL)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	dbQueries := database.New(db)
+	s := state{Config: &cfg, Database: dbQueries}
 
 	cmds := commands{CommandMap: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Not enough arguments were provided")
