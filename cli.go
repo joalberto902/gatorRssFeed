@@ -71,6 +71,17 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
+//handlerReset function reset the data in the database for ease of use
+func handlerReset(s *state, cmd command) error {
+	err := s.Database.ResetUsers(context.Background())
+	if err != nil  {
+		return err
+	}
+
+	fmt.Println("All the users of the database were cleared")
+	return nil 
+}
+
 func (c *commands) run(s *state, cmd command) error {
 	if s == nil {
 		return errors.New("state does not exist")
