@@ -94,6 +94,23 @@ func (c *commands) run(s *state, cmd command) error {
 	return nil
 }
 
+//handlerUsers function prints all ther users to the terminal and indicates the current user
+func handlerUsers(s *state, cmd command) error {
+	users, err := s.Database.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for _, usr := range users {
+		var current string
+		if usr == s.Config.CurrentUserName {
+			current = " (current)"
+		}
+		fmt.Printf("* %s%s\n", usr, current)
+	}
+
+	return nil
+}
 func (c *commands) register(name string, f func(*state, command) error) {
 	c.CommandMap[name] = f
 }
